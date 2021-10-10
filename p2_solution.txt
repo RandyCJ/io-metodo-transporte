@@ -5,9 +5,9 @@ O2     		70		30		60		60		9
 O3     		40		8 		40		20		18    
 Demanda		5 		8 		7 		14		      
 
-Metodo Inicial: Esquina noroeste
+Metodo Inicial: Vogel
   		D1		D2		D3		D4
-O1		5 		2 		- 		- 
-O2		- 		6 		3 		- 
-O3		- 		- 		4 		14
-Costo total: 955
+O1		5 		- 		- 		2 
+O2		- 		8 		1 		- 
+O3		- 		- 		6 		12
+Costo total: 895

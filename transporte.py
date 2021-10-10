@@ -188,11 +188,10 @@ def asignar_oferta_demanda(matriz, i, j):
         E: la matriz, la posicion de la casilla a asignar
         S: la matriz con la asignacion ya hecha
     """
-
     oferta = matriz[i][-1]
     demanda = matriz[-1][j]
 
-    #se asigna 
+    #se asigna
     if oferta < demanda:
         matriz[i][1][j] = oferta
         matriz[i][-1] = 0
@@ -201,9 +200,8 @@ def asignar_oferta_demanda(matriz, i, j):
         matriz[i][1][j] = demanda
         matriz[i][-1] -= demanda
         matriz[-1][j] = 0
-    
-    j2 = j
 
+    j2 = j
     if matriz[i][-1] == 0: #si la oferta es 0, se ponen todos los ceros de esa fila como -
         j = 0
         while j < len(matriz[0][0]):
@@ -216,7 +214,6 @@ def asignar_oferta_demanda(matriz, i, j):
             if matriz[i][1][j2] == 0:
                 matriz[i][1][j2] = "-"
             i += 1
-
     return matriz
 
 def esquina_noroeste(matriz):
@@ -241,21 +238,17 @@ def encontrar_vogel(matriz):
     tmp = []
     i = 0
     j = 0
-    print(matriz)
     #diferencias de las filas
     for matrices in matriz[:-1]:
         for valor in matrices[1]:
             if valor == 0:# si esta sin asignar se guarda el valor de la de costos
                 tmp.append(matrices[0][j])
             j += 1
-        print(tmp)
         if len(tmp) > 1:
             tmp.sort()
             diferencias.append((abs(tmp[0] - tmp[1]), i, 0))
         elif len(tmp) == 1:
             diferencias.append((-1, i, 0))
-        else:
-            diferencias.append((0, i, 0))
         i += 1
         j = 0
         tmp = []
@@ -266,31 +259,26 @@ def encontrar_vogel(matriz):
     j = 0
     while j < len(matriz[0][0]):
         while i < len(matriz)-1:
+            # print("En asignaciones tengo " + str(matriz[i][1][j]) + " en la pos " + str(i) + ", " + str(j))
             if matriz[i][1][j] == 0:# si esta sin asignar se guarda el valor de la de costos
                 tmp.append(matriz[i][0][j])
+                # print("Entonces agrego el valor: " + str(matriz[i][0][j]))
             i += 1
-        print(tmp)
+        # print("Entonces tengo la lista: " + str(tmp))
         if len(tmp) > 1:
             tmp.sort()
             diferencias.append((abs(tmp[0] - tmp[1]), j, 1))
         elif len(tmp) == 1:
             diferencias.append((-1, j, 1))
-        else:
-            diferencias.append((0, j, 1))
         tmp = []
         i = 0
         j += 1
     
-    print(diferencias)
+    if len(diferencias) == 0:
+        return 0
+
     diferencias.sort(reverse=True)
     mayor = diferencias[0]
-
-    if mayor[0] == 0:
-        return 0
-    print()
-    
-    print("Mayor diferencia: " + str(mayor[0]))
-    print("ES " + str(mayor[2]) + " en la posicion " + str(mayor[1]))
 
     if mayor[0] != -1:
         tmp = []
@@ -306,20 +294,17 @@ def encontrar_vogel(matriz):
             for n in range(0, len(matriz)-1):
                 if matriz[n][1][mayor[1]] == 0:
                     tmp.append(matriz[n][0][mayor[1]])
+            tmp.sort()
             for n in range(0, len(matriz)-1):
-                if matriz[n][0][mayor[1]] == tmp[0]:
-                    indice = n
+                 if matriz[n][0][mayor[1]] == tmp[0]:
+                     indice = n
             return [indice, mayor[1]]
     else:
+        mayor2 = diferencias[1]
         if mayor[2] == 0:
-            for n in range(0, len(matriz[0][0])):
-                if matriz[mayor[1]][1][n] == 0:
-                    return [mayor[1], n]
+            return [mayor[1], mayor2[1]]
         else:
-            for n in range(0, len(matriz)-1):
-                if matriz[n][1][mayor[1]] == 0:
-                    return [n, mayor[1]]
-
+            return [mayor2[1], mayor[1]]
 
 def vogel(matriz):
     """ Encuentra la solución inicial por el método de Vogel
@@ -348,7 +333,7 @@ def obtener_solucion(metodo_sol_inicial, ruta_archivo):
         escribir_archivo(ruta_archivo, "\nMetodo Inicial: Esquina noroeste")
     elif metodo_sol_inicial == '2':
         matriz = vogel(matriz)
-        escribir_archivo(ruta_archivo, "\nMetodo Inicial: Esquina noroeste")
+        escribir_archivo(ruta_archivo, "\nMetodo Inicial: Vogel")
     elif metodo_sol_inicial == 3:
         #Russel
         pass
@@ -359,19 +344,17 @@ def obtener_solucion(metodo_sol_inicial, ruta_archivo):
     escribir_matriz_solucion(matriz, ruta_archivo)
 
 
-
-
 def imprimir_ayuda():
     """ Imprime en consola una ayuda para correr el programa
             E: N/A
             S: N/A
     """
     print("Debe ejecutar el programa ingresando dos parámetros por consola")
-    print("El primero es un número indicando el método para la solución inicial")
+    print("\nEl primero es un número indicando el método para la solución inicial")
     print("1. Esquina Noroeste")
     print("2. Vogel")
     print("3. Russel")
-    print("El segundo parámetro debe contener la ruta del archivo con el programa, el cual debe tener la siguiente estructura")
+    print("\nEl segundo parámetro debe contener la ruta del archivo con el problema, el cual debe tener la siguiente estructura")
     print("10,15\n5,5,10\n3,2,8\n7,8,9")
     print("Siendo la primera fila para la oferta, la segunda para la demanda, y las siguientes los costos")
 
