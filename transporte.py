@@ -23,7 +23,7 @@ def leer_archivo(nombre_archivo):
                 elif contador == 1:
                     demanda = lista_datos
                 else:
-                    matriz.append([lista_datos, [0 for x in range(0, len(lista_datos))], ["" for x in range(0, len(lista_datos))]])
+                    matriz.append([lista_datos, [0 for x in range(0, len(lista_datos))], ["-" for x in range(0, len(lista_datos))]])
                 contador += 1
         archivo.close()        
     except:
@@ -78,19 +78,25 @@ def limpiar_archivo_solucion(nombre_archivo):
         print("\nNo se pudo crear o abrir el archivo\n")
 
 def escribir_matriz_costos(matriz, nombre_archivo):
-    matriz_costos = obtener_matriz_costos(matriz)
+    matriz_costos = obtener_tipo_matriz(matriz, 0)
     matriz_texto = matriz_a_texto(matriz_costos)
     escribir_archivo(nombre_archivo, "Matriz de costos")
     escribir_archivo(nombre_archivo, matriz_texto)
 
-def obtener_matriz_costos(matriz):
+def escribir_matriz_solucion(matriz, nombre_archivo):
+    matriz_asignacion = obtener_tipo_matriz(matriz, 1)
+    matriz_texto = matriz_a_texto(matriz_asignacion)
+    escribir_archivo(nombre_archivo, matriz_texto)
+    escribir_archivo(nombre_archivo, "Costo total: " + str(obtener_costo_total(matriz)))
+
+def obtener_tipo_matriz(matriz, tipo):
     """Retorna una matriz de las 3 que almacena la variable matriz
         con 0: matriz de costos
         con 1: matriz de asignaciones
         con 2: matriz de indices
         E: la matriz, el tipo de matriz deseado
         S: la matriz deseada
-        """
+    """
     encabezado = []
     nueva_matriz = []
     encabezado.append(" ")
@@ -98,50 +104,25 @@ def obtener_matriz_costos(matriz):
     while i < len(matriz[0][0]):
         encabezado.append("D" + str(i+1))
         i += 1
-    encabezado.append("Oferta")
+    if tipo == 0:
+        encabezado.append("Oferta")
     nueva_matriz.append(encabezado)
 
     i = 0
     fila = []
     for matrices in matriz[:-1]:
         fila.append("O" + str(i+1))
-        fila += matrices[0]
-        fila.append(matrices[-1])
+        fila += matrices[tipo]
+        if tipo == 0:
+            fila.append(matrices[-1])
         nueva_matriz.append(fila)
         fila = []
         i += 1
     
-    demanda = ["Demanda"]
-    demanda += matriz[-1] + [" "]
-    nueva_matriz.append(demanda)
-
-    return nueva_matriz
-
-def obtener_matriz_asignaciones(matriz):
-    """Retorna una matriz de las 3 que almacena la variable matriz
-        con 0: matriz de costos
-        con 1: matriz de asignaciones
-        con 2: matriz de indices
-        E: la matriz, el tipo de matriz deseado
-        S: la matriz deseada
-        """
-    encabezado = []
-    nueva_matriz = []
-    encabezado.append(" ")
-    i = 0
-    while i < len(matriz[0][0]):
-        encabezado.append("D" + str(i+1))
-        i += 1
-    nueva_matriz.append(encabezado)
-
-    i = 0
-    fila = []
-    for matrices in matriz[:-1]:
-        fila.append("O" + str(i+1))
-        fila += matrices[1]
-        nueva_matriz.append(fila)
-        fila = []
-        i += 1
+    if tipo == 0:
+        demanda = ["Demanda"]
+        demanda += matriz[-1] + [" "]
+        nueva_matriz.append(demanda)
 
     return nueva_matriz
 
@@ -158,7 +139,6 @@ def matriz_a_texto(matriz):
         return "\n".join(tabla)
 
 def obtener_costo_total(matriz):
-
     i = 0
     total = 0
     for matrices in matriz[:-1]:
@@ -183,8 +163,8 @@ def equilibrar_matriz(matriz):
     else:
         for listas in matriz[0][:-1]:
             for lista in listas[:-1]:
-                if lista[0] == "":
-                    lista.append("")
+                if lista[0] == "-":
+                    lista.append("-")
                 else:
                     lista.append(0)
         matriz[0][-1].append(abs(diferencia))
@@ -224,15 +204,17 @@ def asignar_oferta_demanda(matriz, i, j):
     
     j2 = j
 
-    if matriz[i][-1] == 0: #si la oferta es 0, se ponen todos los de esa fila como NA
-        j += 1
+    if matriz[i][-1] == 0: #si la oferta es 0, se ponen todos los ceros de esa fila como -
+        j = 0
         while j < len(matriz[0][0]):
-            matriz[i][1][j] = "-"
+            if matriz[i][1][j] == 0:
+                matriz[i][1][j] = "-"
             j += 1
-    if matriz[-1][j2] == 0: #si la demanda es 0, se ponen todos los de esa columna como NA
-        i += 1
+    if matriz[-1][j2] == 0: #si la demanda es 0, se ponen todos los de esa columna como -
+        i = 0
         while i < len(matriz)-1:
-            matriz[i][1][j2] = "-"
+            if matriz[i][1][j2] == 0:
+                matriz[i][1][j2] = "-"
             i += 1
 
     return matriz
@@ -250,6 +232,108 @@ def esquina_noroeste(matriz):
         i = encontrar_noroeste(matriz)
     return matriz
 
+def encontrar_vogel(matriz):
+    """Encuentra la posicion a asignar con el metodo vogel
+        E: la matriz
+        S: una lista con la posicion de la casilla a asignar
+    """
+    diferencias = []
+    tmp = []
+    i = 0
+    j = 0
+    print(matriz)
+    #diferencias de las filas
+    for matrices in matriz[:-1]:
+        for valor in matrices[1]:
+            if valor == 0:# si esta sin asignar se guarda el valor de la de costos
+                tmp.append(matrices[0][j])
+            j += 1
+        print(tmp)
+        if len(tmp) > 1:
+            tmp.sort()
+            diferencias.append((abs(tmp[0] - tmp[1]), i, 0))
+        elif len(tmp) == 1:
+            diferencias.append((-1, i, 0))
+        else:
+            diferencias.append((0, i, 0))
+        i += 1
+        j = 0
+        tmp = []
+
+    #diferencias de las columnas
+    tmp = []
+    i = 0
+    j = 0
+    while j < len(matriz[0][0]):
+        while i < len(matriz)-1:
+            if matriz[i][1][j] == 0:# si esta sin asignar se guarda el valor de la de costos
+                tmp.append(matriz[i][0][j])
+            i += 1
+        print(tmp)
+        if len(tmp) > 1:
+            tmp.sort()
+            diferencias.append((abs(tmp[0] - tmp[1]), j, 1))
+        elif len(tmp) == 1:
+            diferencias.append((-1, j, 1))
+        else:
+            diferencias.append((0, j, 1))
+        tmp = []
+        i = 0
+        j += 1
+    
+    print(diferencias)
+    diferencias.sort(reverse=True)
+    mayor = diferencias[0]
+
+    if mayor[0] == 0:
+        return 0
+    print()
+    
+    print("Mayor diferencia: " + str(mayor[0]))
+    print("ES " + str(mayor[2]) + " en la posicion " + str(mayor[1]))
+
+    if mayor[0] != -1:
+        tmp = []
+        indice = 0
+        if mayor[2] == 0: # si el mayor se encuentra en las filas
+            for n in range(0, len(matriz[0][0])):
+                if matriz[mayor[1]][1][n] == 0:
+                    tmp.append(matriz[mayor[1]][0][n])
+            tmp.sort()
+            indice = matriz[mayor[1]][0].index(tmp[0])
+            return [mayor[1], indice]
+        else: #si el mayor se encuentra en las columnas
+            for n in range(0, len(matriz)-1):
+                if matriz[n][1][mayor[1]] == 0:
+                    tmp.append(matriz[n][0][mayor[1]])
+            for n in range(0, len(matriz)-1):
+                if matriz[n][0][mayor[1]] == tmp[0]:
+                    indice = n
+            return [indice, mayor[1]]
+    else:
+        if mayor[2] == 0:
+            for n in range(0, len(matriz[0][0])):
+                if matriz[mayor[1]][1][n] == 0:
+                    return [mayor[1], n]
+        else:
+            for n in range(0, len(matriz)-1):
+                if matriz[n][1][mayor[1]] == 0:
+                    return [n, mayor[1]]
+
+
+def vogel(matriz):
+    """ Encuentra la solución inicial por el método de Vogel
+        E: la matriz con los costos, demandas y ofertas
+    """
+    i = encontrar_vogel(matriz)
+    while i != 0:
+        j = i[1]
+        i = i[0]
+
+        matriz = asignar_oferta_demanda(matriz, i, j)
+        i = encontrar_vogel(matriz)
+    return matriz
+
 def obtener_solucion(metodo_sol_inicial, ruta_archivo):
     matriz = leer_archivo(ruta_archivo)
     matriz = equilibrar_matriz(matriz)
@@ -261,21 +345,20 @@ def obtener_solucion(metodo_sol_inicial, ruta_archivo):
 
     if metodo_sol_inicial == '1':
         matriz = esquina_noroeste(matriz)
-        matriz_asig = obtener_matriz_asignaciones(matriz)
         escribir_archivo(ruta_archivo, "\nMetodo Inicial: Esquina noroeste")
-        escribir_archivo(ruta_archivo, matriz_a_texto(matriz_asig))
-        escribir_archivo(ruta_archivo, "Costo total: " + str(obtener_costo_total(matriz)))
-        
-        
-    elif metodo_sol_inicial == 2:
-        #Vogel
-        pass
+    elif metodo_sol_inicial == '2':
+        matriz = vogel(matriz)
+        escribir_archivo(ruta_archivo, "\nMetodo Inicial: Esquina noroeste")
     elif metodo_sol_inicial == 3:
         #Russel
         pass
     else:
         print("El metodo ingresado no es valido")
         quit()
+    
+    escribir_matriz_solucion(matriz, ruta_archivo)
+
+
 
 
 def imprimir_ayuda():
