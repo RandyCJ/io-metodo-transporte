@@ -1,5 +1,8 @@
 import sys 
 import os
+import numpy as np
+from sympy import *
+from sympy.solvers.solveset import linsolve
 
 def leer_archivo(nombre_archivo):
     """ Función encargada de leer el archivo, también guarda todos los datos en un diccionario de datos
@@ -170,18 +173,6 @@ def equilibrar_matriz(matriz):
         matriz[0][-1].append(abs(diferencia))
     return matriz[0]
 
-def encontrar_noroeste(matriz):
-    i = 0
-    j = 0
-    for fila in matriz[:-1]:
-        for columna in fila[1]:
-            if columna == 0:
-                return [i, j]
-            j += 1
-        i += 1
-        j = 0    
-    return 0
-
 def asignar_oferta_demanda(matriz, i, j):
     """ Asigna la oferta o demanda a la casilla seleccionada, hace las restas en el menor
         y coloca '-' (Sin Asignar) a las casillas donde ya no es posible asignar
@@ -215,6 +206,18 @@ def asignar_oferta_demanda(matriz, i, j):
                 matriz[i][1][j2] = "-"
             i += 1
     return matriz
+
+def encontrar_noroeste(matriz):
+    i = 0
+    j = 0
+    for fila in matriz[:-1]:
+        for columna in fila[1]:
+            if columna == 0:
+                return [i, j]
+            j += 1
+        i += 1
+        j = 0    
+    return 0
 
 def esquina_noroeste(matriz):
     """ Encuentra la solución inicial por el método de la esquina noroeste
@@ -319,6 +322,98 @@ def vogel(matriz):
         i = encontrar_vogel(matriz)
     return matriz
 
+def verificar_optimalidad(matriz):
+
+    i = 0
+    j = 0
+    variables_mejorables = []
+
+    while i < len(matriz)-1:
+        while j < len(matriz[0][0]):
+            valor = matriz[i][2][j]
+            if type(valor) == int and valor > 0:
+                variables_mejorables.append((valor, i, j))
+            j += 1
+        j = 0
+        i += 1
+    
+    variables_mejorables.sort(reverse=True)
+    return variables_mejorables
+
+def mas_asignados_fila_columna(matriz):
+    
+    #primero sacamos la cantidad de asignados por fila
+    i = 0
+    j = 0
+    cuenta = 0
+    asignados = []
+    while i < len(matriz)-1:
+        while j < len(matriz[0][0]):
+            if type(matriz[i][1][j]) == int:
+                if matriz[i][1][j] > 0:
+                    cuenta += 1
+            j += 1
+        asignados.append((cuenta, i, 0)) #el cero indica que es una fila
+        j = 0
+        i += 1
+        cuenta = 0
+    
+    #ahora sacamos cantidad de asignados por columna
+    i = 0
+    j = 0
+    while j < len(matriz[0][0]):
+        while i < len(matriz) - 1:
+            if type(matriz[i][1][j]) == int:
+                if matriz[i][1][j] > 0:
+                    cuenta += 1
+            i += 1
+        asignados.append((cuenta, j, 1)) # el uno indica que es una columna
+        i = 0
+        j += 1
+        cuenta = 0
+
+    asignados.sort(reverse=True)
+    return asignados[0]
+
+def resolver_variables(matriz, mejor_linea):
+    # se crean las variables V de las filas
+    variables_lineas = []
+    for n in range(0, len(matriz)-1):
+        variables_lineas.append(Symbol("U" + str(n+1)))
+
+    # se crean las variables U de las columnas
+    variables_columnas = []
+    for n in range(0, len(matriz[0][0])):
+        variables_columnas.append(Symbol("V" + str(n+1)))
+
+    if mejor_linea[2] == 0:
+        variables_lineas[mejor_linea[1]] = 0
+    else:
+        variables_columnas[mejor_linea[1]] = 0
+
+    ecuaciones = []
+    i = 0
+    j = 0
+    while i < len(matriz)-1:
+        while j < len(matriz[0][0]):
+            if type(matriz[i][1][j]) == int and matriz[i][1][j] > 0:
+                ecuacion = variables_lineas[i] + variables_columnas[j] - matriz[i][0][j]
+                ecuaciones.append(ecuacion)
+            j += 1
+        i += 1
+        j = 0
+    tupla_variables = tuple(variables_lineas) + tuple(variables_columnas)
+    variables_resueltas = linsolve(ecuaciones, tupla_variables)
+
+    return variables_resueltas
+
+def mejorar_solucion(matriz):
+    matriz = [[[2,3,5,4], ["-",12,1,9], ["-", "-", "-", "-"], 22], [[5,9,2,7], [7,"-",8,"-"], ["-", "-", "-", "-"], 15], [[5,7,8,6], ["-","-",8,"-"], ["-", "-", "-", "-"], 8], [7,12,17,9]]
+    print(matriz)
+    mejor_fila_columna = mas_asignados_fila_columna(matriz)
+    variables_resueltas = resolver_variables(matriz, mejor_fila_columna)
+    print(variables_resueltas)
+
 def obtener_solucion(metodo_sol_inicial, ruta_archivo):
     matriz = leer_archivo(ruta_archivo)
     matriz = equilibrar_matriz(matriz)
@@ -334,7 +429,7 @@ def obtener_solucion(metodo_sol_inicial, ruta_archivo):
     elif metodo_sol_inicial == '2':
         matriz = vogel(matriz)
         escribir_archivo(ruta_archivo, "\nMetodo Inicial: Vogel")
-    elif metodo_sol_inicial == 3:
+    elif metodo_sol_inicial == '3':
         #Russel
         pass
     else:
@@ -342,6 +437,10 @@ def obtener_solucion(metodo_sol_inicial, ruta_archivo):
         quit()
     
     escribir_matriz_solucion(matriz, ruta_archivo)
+    matriz = mejorar_solucion(matriz)
+    #variables_mejorables = verificar_optimalidad(matriz)
+        
+
 
 
 def imprimir_ayuda():
