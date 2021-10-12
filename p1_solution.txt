@@ -4,7 +4,7 @@ O1     		3 		2 		8 		0 		10
 O2     		7 		8 		9 		0 		15    
 Demanda		5 		5 		10		5 		      
 
-Metodo Inicial: Esquina noroeste
+Metodo Inicial: Vogel
   		D1		D2		D3		D4
 O1		5 		5 		- 		- 
 O2		- 		- 		10		5 
