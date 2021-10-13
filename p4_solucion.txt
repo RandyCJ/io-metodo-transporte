@@ -1,0 +1,18 @@
+Matriz de costos
+       		D1  		D2  		D3  		Oferta
+O1     		8   		6   		10  		2000  
+O2     		10  		4   		9   		2500  
+Demanda		1500		2000		1000		      
+
+Metodo Inicial: Vogel
+Matriz de asignacion
+  		D1  		D2  		D3 
+O1		1500		-   		500
+O2		-   		2000		500
+Costo total: 29500
+Matriz de indices
+       		V1 = -2		V2 = -5		V3 = 0
+U1 = 10		-      		-1     		-     
+U2 = 9 		-3     		-      		-     
+Se encontro la optimalidad
+Costo minimo total: 29500

@@ -1,8 +1,10 @@
 import sys 
 import os
-import numpy as np
 from sympy import *
 from sympy.solvers.solveset import linsolve
+from itertools import chain
+
+asignaciones_resueltas = []
 
 def leer_archivo(nombre_archivo):
     """ Función encargada de leer el archivo, también guarda todos los datos en un diccionario de datos
@@ -55,7 +57,7 @@ def escribir_archivo(nombre_archivo, texto):
             S: N/A
     """
     nombre_archivo = str(nombre_archivo).replace(".txt", "")
-    nombre_archivo += "_solution.txt"
+    nombre_archivo += "_solucion.txt"
     try:
         with open(nombre_archivo,"a") as archivo:
             archivo.write(texto + os.linesep)
@@ -71,7 +73,7 @@ def limpiar_archivo_solucion(nombre_archivo):
             S: N/A
     """
     nombre_archivo= str(nombre_archivo).replace(".txt", "")
-    nombre_archivo += "_solution.txt"
+    nombre_archivo += "_solucion.txt"
     try:
         with open(nombre_archivo,"w") as archivo:
             archivo.write("")
@@ -86,9 +88,39 @@ def escribir_matriz_costos(matriz, nombre_archivo):
     escribir_archivo(nombre_archivo, "Matriz de costos")
     escribir_archivo(nombre_archivo, matriz_texto)
 
+def escribir_entrante_saliente(v_entrante, v_saliente, nombre_archivo):
+
+    entrante = "Variable entrante: U" + str(v_entrante[1] + 1) + "V" + str(v_entrante[2] + 1)
+    saliente = "Variable saliente: U" + str(v_saliente[1] + 1) + "V" + str(v_saliente[2] + 1)
+    if v_entrante[0] == 0:
+        saliente += "\nHay solucion multiple"
+    escribir_archivo(nombre_archivo, entrante + "\n" + saliente)
+
+def escribir_matriz_indices(matriz, variables, nombre_archivo):
+    matriz_indices = obtener_tipo_matriz(matriz, 2)
+    
+    i = 0
+    while i < len(matriz_indices):
+        matriz_indices[i] = ["U" + str(i+1) + " = " + str(variables[0][i])] + matriz_indices[i]
+        i += 1
+
+    variables[1] = [" "] + variables[1]
+
+    i = 1
+    while i < len(variables[1]):
+        variables[1][i] = "V" + str(i) + " = " + str(variables[1][i])
+        i += 1
+    
+    matriz_indices = [variables[1]] + matriz_indices
+    
+    matriz_texto = matriz_a_texto(matriz_indices)
+    escribir_archivo(nombre_archivo, "Matriz de indices")
+    escribir_archivo(nombre_archivo, matriz_texto)
+
 def escribir_matriz_solucion(matriz, nombre_archivo):
     matriz_asignacion = obtener_tipo_matriz(matriz, 1)
     matriz_texto = matriz_a_texto(matriz_asignacion)
+    escribir_archivo(nombre_archivo, "Matriz de asignacion")
     escribir_archivo(nombre_archivo, matriz_texto)
     escribir_archivo(nombre_archivo, "Costo total: " + str(obtener_costo_total(matriz)))
 
@@ -104,17 +136,20 @@ def obtener_tipo_matriz(matriz, tipo):
     nueva_matriz = []
     encabezado.append(" ")
     i = 0
-    while i < len(matriz[0][0]):
-        encabezado.append("D" + str(i+1))
-        i += 1
+    if tipo != 2:
+        while i < len(matriz[0][0]):
+            encabezado.append("D" + str(i+1))
+            i += 1
     if tipo == 0:
         encabezado.append("Oferta")
-    nueva_matriz.append(encabezado)
+    if tipo != 2:
+        nueva_matriz.append(encabezado)
 
     i = 0
     fila = []
     for matrices in matriz[:-1]:
-        fila.append("O" + str(i+1))
+        if tipo != 2:
+            fila.append("O" + str(i+1))
         fila += matrices[tipo]
         if tipo == 0:
             fila.append(matrices[-1])
@@ -262,12 +297,9 @@ def encontrar_vogel(matriz):
     j = 0
     while j < len(matriz[0][0]):
         while i < len(matriz)-1:
-            # print("En asignaciones tengo " + str(matriz[i][1][j]) + " en la pos " + str(i) + ", " + str(j))
             if matriz[i][1][j] == 0:# si esta sin asignar se guarda el valor de la de costos
                 tmp.append(matriz[i][0][j])
-                # print("Entonces agrego el valor: " + str(matriz[i][0][j]))
             i += 1
-        # print("Entonces tengo la lista: " + str(tmp))
         if len(tmp) > 1:
             tmp.sort()
             diferencias.append((abs(tmp[0] - tmp[1]), j, 1))
@@ -322,11 +354,7 @@ def vogel(matriz):
         i = encontrar_vogel(matriz)
     return matriz
 
-def verificar_optimalidad(matriz, bandera):
-
-    # si es la primera iteracion, no hay indices calculados y no podemos saber si es optima o no
-    if bandera: 
-        return [0]
+def verificar_optimalidad(matriz):
 
     i = 0
     j = 0
@@ -343,7 +371,9 @@ def verificar_optimalidad(matriz, bandera):
         i += 1
     
     variables_mejorables.sort(reverse=True)
-    return variables_mejorables
+    if len(variables_mejorables) >= 1:
+        return variables_mejorables[0]
+    return 0
 
 def mas_asignados_fila_columna(matriz):
     
@@ -355,7 +385,7 @@ def mas_asignados_fila_columna(matriz):
     while i < len(matriz)-1:
         while j < len(matriz[0][0]):
             if type(matriz[i][1][j]) == int:
-                if matriz[i][1][j] > 0:
+                if matriz[i][1][j] >= 0:
                     cuenta += 1
             j += 1
         asignados.append((cuenta, i, 0)) #el cero indica que es una fila
@@ -366,10 +396,11 @@ def mas_asignados_fila_columna(matriz):
     #ahora sacamos cantidad de asignados por columna
     i = 0
     j = 0
+    cuenta = 0
     while j < len(matriz[0][0]):
         while i < len(matriz) - 1:
             if type(matriz[i][1][j]) == int:
-                if matriz[i][1][j] > 0:
+                if matriz[i][1][j] >= 0:
                     cuenta += 1
             i += 1
         asignados.append((cuenta, j, 1)) # el uno indica que es una columna
@@ -395,15 +426,16 @@ def resolver_variables(matriz, mejor_linea):
         variables_lineas[mejor_linea[1]] = 0
     else:
         variables_columnas[mejor_linea[1]] = 0
-
+    
     ecuaciones = []
     i = 0
     j = 0
     while i < len(matriz)-1:
         while j < len(matriz[0][0]):
-            if type(matriz[i][1][j]) == int and matriz[i][1][j] > 0:
-                ecuacion = variables_lineas[i] + variables_columnas[j] - matriz[i][0][j]
-                ecuaciones.append(ecuacion)
+            if type(matriz[i][1][j]) == int:
+                if matriz[i][1][j] > 0:
+                    ecuacion = variables_lineas[i] + variables_columnas[j] - matriz[i][0][j]
+                    ecuaciones.append(ecuacion)
             j += 1
         i += 1
         j = 0
@@ -437,115 +469,73 @@ def calcular_indices(matriz, variables_u, variables_v):
     return matriz
 
 def mejorar_solucion(matriz):
-    matriz = [[[6,3,5,4], ["-",12,1,9], ["-", "-", "-", "-"], 22], [[5,9,2,7], [7,"-",8,"-"], ["-", "-", "-", "-"], 15], [[5,7,8,6], ["-","-",8,"-"], ["-", "-", "-", "-"], 8], [7,12,17,9]]
-    
+    #matriz = [[[6,3,5,4], ["-",12,1,9], ["-", "-", "-", "-"], 22], [[5,9,2,7], [7,"-",8,"-"], ["-", "-", "-", "-"], 15], [[5,7,8,6], ["-","-","-",6], ["-", "-", "-", "-"], 8], [7,12,17,9]]
     mejor_fila_columna = mas_asignados_fila_columna(matriz)
     variables_resueltas = resolver_variables(matriz, mejor_fila_columna)
     matriz = calcular_indices(matriz, variables_resueltas[0], variables_resueltas[1])
-    return matriz
+    return [matriz, variables_resueltas]
 
-def obtener_variable_saliente(matriz, variable_a_mejorar, variables_mejoradas):
-
-    # primero vemos los valores cercanos en la fila
-    # buscamos en derecha e izquierda, y comprobramos que no haya sido previamente mejorado
-    i = variable_a_mejorar[1]
-    j = variable_a_mejorar[2] - 1
-    variables_salientes = []
-    print("Variable a mejorar: " + str(variable_a_mejorar))
-    print("Variables mejoradas: " + str(variables_mejoradas))
-    #buscamos desde la posicion de la casilla, de derecha a izquierda hasta que encuentre uno
-    while j >= 0:
-        print("LINEA IZQUIERDA")
-        print(matriz[i][1][j])
-        print(str(i) + "; " + str(j))
-        if matriz[i][1][j] == int:
-            if matriz[i][1][j] > 0 and (i, j) not in variables_mejoradas:
-                variables_salientes.append((matriz[i][1][j], i, j))
-                break #se agarra el primero que encuentre
-        j -= 1
+def obtener_variable_saliente(variable_entrante, ciclo_asignacion):
     
-    #ahora recorremos en la fila desde la posicion a mejorar pero hacia la derecha
-    j = variable_a_mejorar[2] + 1
-    while j < len(matriz[0][0]):
-        print("LINEA DERECHA")
-        print(matriz[i][1][j])
-        print(str(i) + "; " + str(j))
-        print( (i, j) not in variables_mejoradas)
-        if type(matriz[i][1][j]) == int:
-            if matriz[i][1][j] > 0 and (i, j) not in variables_mejoradas:
-                variables_salientes.append((matriz[i][1][j], i, j))
-                break #se agarra el primero que encuentre
-        j += 1
-    
-    #ahora vamos con la columna desde la posicion hacia arriba
-    j = variable_a_mejorar[2]
-    i -= 1 #nos colocamos en la fila de arriba
-    while i >= 0:
-        print("COLUMNA ARRIBA")
-        print(matriz[i][1][j])
-        print(str(i) + "; " + str(j))
-        if type(matriz[i][1][j]) == int:
-            if matriz[i][1][j] > 0 and (i, j) not in variables_mejoradas:
-                print("a")
-                variables_salientes.append((matriz[i][1][j], i, j))
-                break #se agarra el primero que encuentre
-        i -= 1
+    ciclo_asignacion = list(chain.from_iterable(ciclo_asignacion))
+    ciclo_asignacion = [x for x in ciclo_asignacion if x != 0]
+    ciclo_asignacion.sort()
 
-    #ahora vamos con la columna desde la posicion hacia abajo
-    i = variable_a_mejorar[1] + 1 #nos colocamos en la fila de abajo
-    while i < len(matriz)-1:
-        print("COLUMNA ABAJO")
-        print(matriz[i][1][j])
-        print(str(i) + "; " + str(j))
-        if matriz[i][1][j] == int:
-            if matriz[i][1][j] > 0 and (i, j) not in variables_mejoradas:
-                variables_salientes.append((matriz[i][1][j], i, j))
-                break #se agarra el primero que encuentre
-        i += 1
+    variable_saliente = ()
+    for (valor, i, j) in ciclo_asignacion[1:]:
+        if variable_entrante[1] == i or variable_entrante[2] == j: # se elije la que tenga menor valor que sea adyacente a la entrante
+            variable_saliente = (valor, i, j)
+            ciclo_asignacion.remove(variable_saliente)
+            break
     
-    variables_salientes.sort(reverse=True)
-    print(variables_salientes)
-    return variables_salientes[-1]
+    return [variable_saliente, ciclo_asignacion[1:]]
+    
 
-def encontrar_2x2(matriz, variable_entrante, variable_saliente):
+def encontrar_ciclo_asignacion(matriz, variable_entrante):
     
     largo_filas = len(matriz)-1
     largo_columnas = len(matriz[0][0])
 
     matriz_asignaciones = [[0 for x in range(0, largo_columnas)] for x in range(0, largo_filas)]
+    matriz_asignaciones[variable_entrante[1]][variable_entrante[2]] = (0, variable_entrante[1], variable_entrante[2])
     
     i = 0
     j = 0
-
     #hago una copia de las asignaciones, pero guardando las posiciones
     #para asi cuando empiece a eliminar filas y columnas, no perder los indices
     while i < largo_filas:
         while j < largo_columnas:
             if type(matriz[i][1][j]) == int:
                 if matriz[i][1][j] > 0:
-                    matriz_asignaciones[i][j] = (i, j)
+                    matriz_asignaciones[i][j] = (matriz[i][1][j], i, j)
             j += 1
         i += 1
         j = 0
 
-    while len(matriz_asignaciones) != 2 and len(matriz_asignaciones[0]) != 2: #mientras no sea 2x2
+    bandera = True #cada vez que se elimina una fila o columna se coloca en True, cuando ya no hace mas termina
+    while bandera: #mientras se haya eliminado una fila o columna
+        bandera = False
         #se revisa las filas hasta que encuentre una con una asignacion, o no lo encuentre
         i = 0
         j = 0
         cuenta = 0
         while i < len(matriz_asignaciones):
             while j < len(matriz_asignaciones[0]):
-                if type(matriz_asignaciones[i][j]):
-                    cuenta += 1
+                if type(matriz_asignaciones[i][j]) == tuple:
+                    if matriz_asignaciones[i][j][1] != variable_entrante[1]:
+                        cuenta += 1
+                    else:
+                        cuenta = 0
+                        break
                 j += 1
             if cuenta == 1:
-                if i != variable_saliente[1] and i != variable_entrante[1]:
-                    matriz_asignaciones.pop(i)
-                    break
+                matriz_asignaciones.pop(i)
+                bandera = True
+                break
             i += 1
             j = 0
             cuenta = 0
-        print("Se eliminaron filas: + " + str(matriz_asignaciones))
+
         i = 0
         j = 0
         cuenta = 0
@@ -553,63 +543,65 @@ def encontrar_2x2(matriz, variable_entrante, variable_saliente):
         while j < len(matriz_asignaciones[0]):
             while i < len(matriz_asignaciones):
                 if type(matriz_asignaciones[i][j]) == tuple:
-                    cuenta += 1
+                    if matriz_asignaciones[i][j][2] != variable_entrante[2]:
+                        cuenta += 1
+                    else:
+                        cuenta = 0
+                        break
                 i += 1
             if cuenta == 1:
-                if j != variable_saliente[2] and j != variable_entrante[2]:
-                    for linea in matriz_asignaciones:
-                        linea.pop(j)
-                    break
+                for linea in matriz_asignaciones:
+                    linea.pop(j)
+                bandera = True
+                break
             j += 1
             i = 0
             cuenta = 0
-        #termina de eliminar una fila y columna con una asignacion, y se vuelve a preguntar
-        print("Se eliminaron filas: + " + str(matriz_asignaciones))
     
-    #pasamos la matriz a una lista simple para facilitar la manipulacion
-    casillas_ciclo = []
-    for linea in matriz_asignaciones:
-        for pos in linea:
-            casillas_ciclo.append(pos)
-    print(casillas_ciclo)
-    #cuando termina, deberiamos tener una matriz 2x2 con las posiciones de las casillas a cambiar la asignacion
-    i_entrante = variable_entrante[1]
-    j_entrante = variable_entrante[2]
-    i_saliente = variable_saliente[1]
-    j_saliente = variable_saliente[2]
+    return matriz_asignaciones
 
-    matriz[i_entrante][1][j_entrante] = matriz[i_saliente][1][j_saliente]
-    matriz[i_saliente][1][j_saliente] = "-"
-
-    #se eliminan las variables entrante y saliente del 2x2
-    i = 0
-    while i < len(casillas_ciclo):
-        if casillas_ciclo[i] == (i_entrante, j_entrante) or casillas_ciclo[i] == (i_saliente, j_saliente):
-            casillas_ciclo.pop(i)
-            i -= 1
-        i += 1
+def cambiar_asignacion(matriz, variable_entrante, variable_saliente, ciclo_asignacion):
+    valor_asignacion = variable_saliente[0]
+    matriz[variable_entrante[1]][1][variable_entrante[2]] = valor_asignacion
+    matriz[variable_saliente[1]][1][variable_saliente[2]] = "-"
+    valor_asignacion *= -1
     
-    #ahora para la casilla cercana a la variable entrante, le restamos lo asignado
-    if casillas_ciclo[0][0] == i_entrante:
-        matriz[casillas_ciclo[0][0]][1][casillas_ciclo[0][1]] -= matriz[i_entrante][1][j_entrante]
-        casillas_ciclo.pop(0)
+    if variable_entrante[1] == variable_saliente[1]:
+        casilla_actual = variable_entrante[2]
+        revisar_filas = False
     else:
-        matriz[casillas_ciclo[1][0]][1][casillas_ciclo[1][1]] -= matriz[i_entrante][1][j_entrante]
-        casillas_ciclo.pop(1)
-    
-    #y en la casilla cercana a la variable saliente, le sumamos lo agregado a la entrante
-    matriz[casillas_ciclo[0][0]][1][casillas_ciclo[0][1]] += matriz[i_entrante][1][j_entrante]
+        casilla_actual = variable_entrante[1]
+        revisar_filas = True
 
+    #recorre las variables del ciclo en un orden 'circular'
+    while len(ciclo_asignacion) != 0:
+        for (valor, i, j) in ciclo_asignacion:
+            if revisar_filas:
+                if i == casilla_actual:
+                    matriz[i][1][j] += valor_asignacion
+                    valor_asignacion *= -1
+                    revisar_filas = False
+                    ciclo_asignacion.remove((valor, i, j))
+                    casilla_actual = j
+                    break
+            else:
+                if j == casilla_actual:
+                    matriz[i][1][j] += valor_asignacion
+                    valor_asignacion *= -1
+                    revisar_filas = True
+                    ciclo_asignacion.remove((valor, i, j))
+                    casilla_actual = i
+                    break
+    matriz[variable_entrante[1]][2][variable_entrante[2]] = "-" # se coloca el indice de la entrante como no asignado
     return matriz
 
 def obtener_solucion(metodo_sol_inicial, ruta_archivo):
+    global asignaciones_resueltas
     matriz = leer_archivo(ruta_archivo)
     matriz = equilibrar_matriz(matriz)
 
     limpiar_archivo_solucion(ruta_archivo)
     escribir_matriz_costos(matriz, ruta_archivo)
-
-    print("Matriz despues de equilibrar: " + str(matriz))
 
     if metodo_sol_inicial == '1':
         matriz = esquina_noroeste(matriz)
@@ -623,32 +615,37 @@ def obtener_solucion(metodo_sol_inicial, ruta_archivo):
     else:
         print("El metodo ingresado no es valido")
         quit()
-    print("Matriz con metodo inicial: " + str(matriz))
 
     escribir_matriz_solucion(matriz, ruta_archivo) #matriz de asignacion inicial
+    multiples = False
+    matriz, variables_resueltas = mejorar_solucion(matriz)
+    escribir_matriz_indices(matriz, variables_resueltas, ruta_archivo)
+    variable_entrante = verificar_optimalidad(matriz)
+    iteracion = 1
+    while variable_entrante != 0:
+        variables_mejoradas = []
+        ciclo_asignacion = encontrar_ciclo_asignacion(matriz, variable_entrante)
+        variable_saliente, ciclo_asignacion = obtener_variable_saliente(variable_entrante, ciclo_asignacion)
+        escribir_entrante_saliente(variable_entrante, variable_saliente, ruta_archivo)
+        matriz = cambiar_asignacion(matriz, variable_entrante, variable_saliente, ciclo_asignacion)
+        m_asig_actual = obtener_tipo_matriz(matriz, 1)
+        if m_asig_actual not in asignaciones_resueltas:
+            asignaciones_resueltas.append(m_asig_actual)
+        else:
+            escribir_archivo(ruta_archivo, "Pero la siguiente iteracion ya fue resuelta, por lo que termina aqui")
+            break
+        if variable_entrante[0] != 0:
+            escribir_archivo(ruta_archivo, "Iteracion " + str(iteracion))
+        else:
+            escribir_archivo(ruta_archivo, "Iteracion extra")
+        escribir_matriz_solucion(matriz, ruta_archivo)
+        matriz, variables_resueltas = mejorar_solucion(matriz)
+        escribir_matriz_indices(matriz, variables_resueltas, ruta_archivo)
+        variable_entrante = verificar_optimalidad(matriz)
+        iteracion += 1
 
-    matriz = mejorar_solucion(matriz)
-    print(matriz)
-    variables_mejorables = verificar_optimalidad(matriz, False)
-    print(variables_mejorables)
-    variables_mejoradas = []
-    variable_saliente = obtener_variable_saliente(matriz, variables_mejorables[0], variables_mejoradas)
-    print(variable_saliente)
-    matriz = encontrar_2x2(matriz, variables_mejorables[0], variable_saliente)
-
-    # variables_mejorables = verificar_optimalidad(matriz, True)
-    # variables_mejoradas = []
-    # while len(variables_mejorables) > 0:
-    #     if variables_mejorables[0] != 0:# si es la primera iteracion    
-    #         variable_saliente = obtener_variable_saliente(matriz, variables_mejorables[0], variables_mejoradas)
-    #         #teniendo la variable saliente y la entrante, se calcula el ciclo de asignacion
-    #         matriz = encontrar_2x2(matriz, variables_mejorables[0], variable_saliente)
-    #         print(matriz)
-    #         quit()
-    # matriz = mejorar_solucion(matriz)
-    # print("Matriz despues de calcular indices: " + str(matriz))
-    # #quit()
-
+    escribir_archivo(ruta_archivo, "Se encontro la optimalidad\nCosto minimo total: " + str(obtener_costo_total(matriz)))
+    print("Costo minimo total: " + str(obtener_costo_total(matriz)))
 
 def imprimir_ayuda():
     """ Imprime en consola una ayuda para correr el programa
