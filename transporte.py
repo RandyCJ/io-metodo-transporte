@@ -92,6 +92,7 @@ def escribir_entrante_saliente(v_entrante, v_saliente, nombre_archivo):
 
     entrante = "Variable entrante: U" + str(v_entrante[1] + 1) + "V" + str(v_entrante[2] + 1)
     saliente = "Variable saliente: U" + str(v_saliente[1] + 1) + "V" + str(v_saliente[2] + 1)
+
     if v_entrante[0] == 0:
         saliente += "\nHay solucion multiple"
     escribir_archivo(nombre_archivo, entrante + "\n" + saliente)
@@ -433,7 +434,7 @@ def resolver_variables(matriz, mejor_linea):
     while i < len(matriz)-1:
         while j < len(matriz[0][0]):
             if type(matriz[i][1][j]) == int:
-                if matriz[i][1][j] > 0:
+                if matriz[i][1][j] >= 0:
                     ecuacion = variables_lineas[i] + variables_columnas[j] - matriz[i][0][j]
                     ecuaciones.append(ecuacion)
             j += 1
@@ -497,8 +498,7 @@ def encontrar_ciclo_asignacion(matriz, variable_entrante):
     largo_columnas = len(matriz[0][0])
 
     matriz_asignaciones = [[0 for x in range(0, largo_columnas)] for x in range(0, largo_filas)]
-    matriz_asignaciones[variable_entrante[1]][variable_entrante[2]] = (0, variable_entrante[1], variable_entrante[2])
-    
+    matriz_asignaciones[variable_entrante[1]][variable_entrante[2]] = (-1, variable_entrante[1], variable_entrante[2])
     i = 0
     j = 0
     #hago una copia de las asignaciones, pero guardando las posiciones
@@ -506,12 +506,11 @@ def encontrar_ciclo_asignacion(matriz, variable_entrante):
     while i < largo_filas:
         while j < largo_columnas:
             if type(matriz[i][1][j]) == int:
-                if matriz[i][1][j] > 0:
+                if matriz[i][1][j] >= 0:
                     matriz_asignaciones[i][j] = (matriz[i][1][j], i, j)
             j += 1
         i += 1
         j = 0
-
     bandera = True #cada vez que se elimina una fila o columna se coloca en True, cuando ya no hace mas termina
     while bandera: #mientras se haya eliminado una fila o columna
         bandera = False
@@ -557,7 +556,6 @@ def encontrar_ciclo_asignacion(matriz, variable_entrante):
             j += 1
             i = 0
             cuenta = 0
-    
     return matriz_asignaciones
 
 def cambiar_asignacion(matriz, variable_entrante, variable_saliente, ciclo_asignacion):
@@ -595,6 +593,16 @@ def cambiar_asignacion(matriz, variable_entrante, variable_saliente, ciclo_asign
     matriz[variable_entrante[1]][2][variable_entrante[2]] = "-" # se coloca el indice de la entrante como no asignado
     return matriz
 
+def es_degenerada(matriz):
+
+    asignaciones_requeridas = len(matriz)-1 + len(matriz[0][0]) - 1
+    cuenta = 0
+    for m in matriz[:-1]:
+        for valor in m[1]:
+            if type(valor) == int:
+                cuenta += 1
+    return cuenta != asignaciones_requeridas
+
 def obtener_solucion(metodo_sol_inicial, ruta_archivo):
     global asignaciones_resueltas
     matriz = leer_archivo(ruta_archivo)
@@ -617,7 +625,10 @@ def obtener_solucion(metodo_sol_inicial, ruta_archivo):
         quit()
 
     escribir_matriz_solucion(matriz, ruta_archivo) #matriz de asignacion inicial
-    multiples = False
+    if es_degenerada(matriz):
+        escribir_archivo(ruta_archivo, "No se puede continuar porque la solucion inicial es degenerada")
+        print("Solucion inicial degenerada")
+        quit()
     matriz, variables_resueltas = mejorar_solucion(matriz)
     escribir_matriz_indices(matriz, variables_resueltas, ruta_archivo)
     variable_entrante = verificar_optimalidad(matriz)

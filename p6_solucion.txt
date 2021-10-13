@@ -14,3 +14,4 @@ O2		-   		-   		1500		-
 O3		-   		1200		-   		300
 O4		-   		-   		-   		200
 Costo total: 368000
+No se puede continuar porque la solucion inicial es degenerada

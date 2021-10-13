@@ -10,3 +10,4 @@ Matriz de asignacion
 O1		5 		5 		- 		- 
 O2		- 		- 		10		5 
 Costo total: 115
+No se puede continuar porque la solucion inicial es degenerada
