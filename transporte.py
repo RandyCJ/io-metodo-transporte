@@ -3,6 +3,9 @@ import os
 from sympy import *
 from sympy.solvers.solveset import linsolve
 from itertools import chain
+import copy
+import numpy as np
+from numpy import unravel_index
 
 asignaciones_resueltas = []
 
@@ -355,6 +358,80 @@ def vogel(matriz):
         i = encontrar_vogel(matriz)
     return matriz
 
+def mayor_costo_x_fila(matriz):
+
+    mayores_fila = []
+    for m in matriz[:-1]:
+        tmp = copy.deepcopy(m[0])
+        tmp.sort(reverse=True)
+        for valor in tmp:
+            if valor <10000:
+                mayores_fila.append(valor)
+                break
+    return mayores_fila
+
+def mayor_costo_x_columna(matriz):
+
+    i = 1
+    j = 0
+    mayores_columna = []
+    while j < len(matriz[0][0]):
+        mayor = matriz[0][0][j]
+        while i < len(matriz)-1:
+            if matriz[i][0][j] > mayor:
+                mayor = matriz[i][0][j]
+            i += 1
+        mayores_columna.append(mayor)
+        j += 1
+        i = 1
+    return mayores_columna
+
+def calcular_IC(matriz, mayores_fila, mayores_columna):
+    largo_filas = len(matriz)-1
+    largo_columnas = len(matriz[0][0])
+    i = 0
+    j = 0
+    matriz_IC = [[0 for x in range(0, largo_columnas)] for x in range(0, largo_filas)]
+    while i < largo_filas:
+        while j < largo_columnas:
+            matriz_IC[i][j] = mayores_fila[i] + mayores_columna[j] - matriz[i][0][j]
+            j += 1
+        i += 1
+        j = 0
+    
+    return matriz_IC
+
+def encontrar_russell(matriz, matriz_IC):
+    matriz_IC = np.array(matriz_IC)
+    i, j = unravel_index(matriz_IC.argmax(), matriz_IC.shape) #posicion del mayor IC
+
+
+    while matriz[i][1][j] == "-": #si el mayor elegido ya esta asignado se continua eligiendo
+        matriz_IC[i][j] = -1
+        i, j = unravel_index(matriz_IC.argmax(), matriz_IC.shape) # se calcula el mayor otra vez
+        if matriz_IC[i][j] == -1:
+            return [0, []]
+
+    matriz_IC[i][j] = -1
+    return [[i, j], matriz_IC]
+
+def russell(matriz):
+
+    mayores_filas = mayor_costo_x_fila(matriz)
+    mayores_columnas = mayor_costo_x_columna(matriz)
+
+    matriz_IC = calcular_IC(matriz, mayores_filas, mayores_columnas)
+    matriz_IC2 = copy.deepcopy(matriz_IC)
+    i, matriz_IC = encontrar_russell(matriz, matriz_IC)
+    
+    while i != 0:
+        j = i[1]
+        i = i[0]
+
+        matriz = asignar_oferta_demanda(matriz, i, j)
+        i, matriz_IC = encontrar_russell(matriz, matriz_IC)
+    return [matriz, matriz_IC2]
+
 def verificar_optimalidad(matriz):
 
     i = 0
@@ -559,6 +636,7 @@ def encontrar_ciclo_asignacion(matriz, variable_entrante):
     return matriz_asignaciones
 
 def cambiar_asignacion(matriz, variable_entrante, variable_saliente, ciclo_asignacion):
+
     valor_asignacion = variable_saliente[0]
     matriz[variable_entrante[1]][1][variable_entrante[2]] = valor_asignacion
     matriz[variable_saliente[1]][1][variable_saliente[2]] = "-"
@@ -570,7 +648,7 @@ def cambiar_asignacion(matriz, variable_entrante, variable_saliente, ciclo_asign
     else:
         casilla_actual = variable_entrante[1]
         revisar_filas = True
-
+    
     #recorre las variables del ciclo en un orden 'circular'
     while len(ciclo_asignacion) != 0:
         for (valor, i, j) in ciclo_asignacion:
@@ -618,8 +696,10 @@ def obtener_solucion(metodo_sol_inicial, ruta_archivo):
         matriz = vogel(matriz)
         escribir_archivo(ruta_archivo, "\nMetodo Inicial: Vogel")
     elif metodo_sol_inicial == '3':
-        #Russel
-        pass
+        matriz, matriz_IC = russell(matriz)
+        escribir_archivo(ruta_archivo, "\nMetodo Inicial: Russell")
+        escribir_archivo(ruta_archivo, "Matriz de Indice de Costos")
+        escribir_archivo(ruta_archivo, matriz_a_texto(matriz_IC))
     else:
         print("El metodo ingresado no es valido")
         quit()
@@ -627,7 +707,7 @@ def obtener_solucion(metodo_sol_inicial, ruta_archivo):
     escribir_matriz_solucion(matriz, ruta_archivo) #matriz de asignacion inicial
     if es_degenerada(matriz):
         escribir_archivo(ruta_archivo, "No se puede continuar porque la solucion inicial es degenerada")
-        print("Solucion inicial degenerada")
+        print("Solucion inicial degenerada; WIP implementacion de agregar cero y que no se forme un ciclo")
         quit()
     matriz, variables_resueltas = mejorar_solucion(matriz)
     escribir_matriz_indices(matriz, variables_resueltas, ruta_archivo)
@@ -667,7 +747,7 @@ def imprimir_ayuda():
     print("\nEl primero es un número indicando el método para la solución inicial")
     print("1. Esquina Noroeste")
     print("2. Vogel")
-    print("3. Russel")
+    print("3. Russell")
     print("\nEl segundo parámetro debe contener la ruta del archivo con el problema, el cual debe tener la siguiente estructura")
     print("10,15\n5,5,10\n3,2,8\n7,8,9")
     print("Siendo la primera fila para la oferta, la segunda para la demanda, y las siguientes los costos")

@@ -1,0 +1,56 @@
+Matriz de costos
+       		D1		D2		D3		D4		Oferta
+O1     		17		20		13		12		70    
+O2     		15		21		26		25		90    
+O3     		15		14		15		17		115   
+Demanda		50		60		70		95		      
+
+Metodo Inicial: Esquina noroeste
+Matriz de asignacion
+  		D1		D2		D3		D4
+O1		50		20		- 		- 
+O2		- 		40		50		- 
+O3		- 		- 		20		95
+Costo total: 5305
+Matriz de indices
+       		V1 = -8		V2 = -5		V3 = 0		V4 = 2
+U1 = 25		-      		-      		12    		15    
+U2 = 26		3      		-      		-     		3     
+U3 = 15		-8     		-4     		-     		-     
+Variable entrante: U1V4
+Variable saliente: U1V2
+Iteracion 1
+Matriz de asignacion
+  		D1		D2		D3		D4
+O1		50		- 		- 		20
+O2		- 		60		30		- 
+O3		- 		- 		40		75
+Costo total: 5005
+Matriz de indices
+       		V1 = 5		V2 = -7		V3 = -2		V4 = 0
+U1 = 12		-     		-15    		-3     		-     
+U2 = 28		18    		-      		-      		3     
+U3 = 17		7     		-4     		-      		-     
+Variable entrante: U2V1
+Variable saliente: U2V3
+Iteracion 2
+Matriz de asignacion
+  		D1		D2		D3		D4
+O1		20		- 		- 		50
+O2		30		60		- 		- 
+O3		- 		- 		70		45
+Costo total: 4465
+Matriz de indices
+       		V1 = 5		V2 = 11		V3 = -2		V4 = 0
+U1 = 12		-     		3      		-3     		-     
+U2 = 10		-     		-      		-18    		-15   
+U3 = 17		7     		14     		-      		-     
+Variable entrante: U3V2
+Variable saliente: U3V4
+Iteracion 3
+Matriz de asignacion
+  		D1 		D2		D3		D4
+O1		-25		- 		- 		95
+O2		75 		15		- 		- 
+O3		-  		45		70		- 
+Costo total: 3835

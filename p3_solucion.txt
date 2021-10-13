@@ -6,24 +6,12 @@ O3     		6 		1 		2 		4 		60
 O4     		4 		3 		6 		6 		45    
 Demanda		70		40		70		35		      
 
-Metodo Inicial: Vogel
-Matriz de asignacion
-  		D1		D2		D3		D4
-O1		25		40		10		5 
-O2		- 		- 		- 		30
-O3		- 		- 		60		- 
-O4		45		- 		- 		- 
-Costo total: 620
-Matriz de indices
-       		V1 = 5		V2 = 2		V3 = 7		V4 = 3
-U1 = 0 		-     		-     		-     		-     
-U2 = -2		0     		-6    		-1    		-     
-U3 = -5		-6    		-4    		-     		-6    
-U4 = -1		-     		-2    		0     		-4    
-Variable entrante: U4V3
-Variable saliente: U1V3
-Hay solucion multiple
-Iteracion extra
+Metodo Inicial: Russell
+Matriz de Indice de Costos
+8		11		7 		10
+9		6 		7 		11
+6		11		11		8 
+8		9 		7 		6 
 Matriz de asignacion
   		D1		D2		D3		D4
 O1		35		40		- 		5 
@@ -56,6 +44,23 @@ U3 = 0		-6    		-4     		-     		-6
 U4 = 4		-     		-2     		-     		-4     
 Variable entrante: U2V4
 Variable saliente: U2V1
+Hay solucion multiple
+Iteracion extra
+Matriz de asignacion
+  		D1		D2		D3		D4
+O1		35		40		- 		5 
+O2		- 		- 		- 		30
+O3		- 		- 		60		- 
+O4		35		- 		10		- 
+Costo total: 620
+Matriz de indices
+       		V1 = 5		V2 = 2		V3 = 7		V4 = 3
+U1 = 0 		-     		-     		0     		-     
+U2 = -2		0     		-6    		-1    		-     
+U3 = -5		-6    		-4    		-     		-6    
+U4 = -1		-     		-2    		-     		-4    
+Variable entrante: U2V1
+Variable saliente: U2V4
 Hay solucion multiple
 Pero la siguiente iteracion ya fue resuelta, por lo que termina aqui
 Se encontro la optimalidad
