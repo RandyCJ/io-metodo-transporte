@@ -6,8 +6,9 @@ Demanda		5 		5 		10		5
 
 Metodo Inicial: Russell
 Matriz de Indice de Costos
-12		14		9		8
-9 		9 		9		9
+  		D1		D2		D3		D4
+O1		12		14		9 		8 
+O2		9 		9 		9 		9 
 Matriz de asignacion
   		D1		D2		D3		D4
 O1		5 		5 		- 		- 

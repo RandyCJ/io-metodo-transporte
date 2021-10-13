@@ -6,7 +6,13 @@ O3     		90  		80  		95  		90  		1500
 O4     		0   		0   		0   		0   		200   
 Demanda		1000		1200		1500		1000		      
 
-Metodo Inicial: Vogel
+Metodo Inicial: Russell
+Matriz de Indice de Costos
+  		D1 		D2 		D3 		D4 
+O1		115		100		110		110
+O2		100		115		115		100
+O3		100		115		95 		105
+O4		95 		100		95 		100
 Matriz de asignacion
   		D1  		D2  		D3  		D4 
 O1		1000		-   		-   		500

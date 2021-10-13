@@ -168,6 +168,16 @@ def obtener_tipo_matriz(matriz, tipo):
 
     return nueva_matriz
 
+def obtener_matriz_indices_IC(indices_IC):
+    #O y D para la tabla de indices
+    encabezado = [" "]
+    for n in range(0, len(indices_IC[0])):
+        encabezado.append("D" + str(n+1))
+    for n in range(0, len(indices_IC)):
+        indices_IC[n] = ["O" + str(n+1)] + indices_IC[n]
+    indices_IC = [encabezado] + indices_IC
+    return indices_IC
+
 def matriz_a_texto(matriz):
         """ Convierte la matriz en un string legible e imprimible
             E: N/A
@@ -392,36 +402,42 @@ def calcular_IC(matriz, mayores_fila, mayores_columna):
     i = 0
     j = 0
     matriz_IC = [[0 for x in range(0, largo_columnas)] for x in range(0, largo_filas)]
+    indices_IC = [[0 for x in range(0, largo_columnas)] for x in range(0, largo_filas)]
+
     while i < largo_filas:
         while j < largo_columnas:
-            matriz_IC[i][j] = mayores_fila[i] + mayores_columna[j] - matriz[i][0][j]
+            matriz_IC[i][j] = (mayores_fila[i] + mayores_columna[j] - matriz[i][0][j], matriz[i][0][j], (i, j))
+            indices_IC[i][j] = mayores_fila[i] + mayores_columna[j] - matriz[i][0][j]
             j += 1
         i += 1
         j = 0
-    
-    return matriz_IC
+
+    return [matriz_IC, indices_IC]
 
 def encontrar_russell(matriz, matriz_IC):
-    matriz_IC = np.array(matriz_IC)
-    i, j = unravel_index(matriz_IC.argmax(), matriz_IC.shape) #posicion del mayor IC
-
-
-    while matriz[i][1][j] == "-": #si el mayor elegido ya esta asignado se continua eligiendo
-        matriz_IC[i][j] = -1
-        i, j = unravel_index(matriz_IC.argmax(), matriz_IC.shape) # se calcula el mayor otra vez
-        if matriz_IC[i][j] == -1:
+    
+    if len(matriz_IC) == 0:
             return [0, []]
+    mayor, costo, pos = matriz_IC[0]
 
-    matriz_IC[i][j] = -1
-    return [[i, j], matriz_IC]
+    while matriz[pos[0]][1][pos[1]] == "-": #si el mayor elegido ya esta asignado se continua eligiendo
+        matriz_IC.pop(0)
+        if len(matriz_IC) == 0:
+            return [0, []]
+        mayor, costo, pos = matriz_IC[0]
+
+    matriz_IC.pop(0)
+    return [[pos[0], pos[1]], matriz_IC]
 
 def russell(matriz):
 
     mayores_filas = mayor_costo_x_fila(matriz)
     mayores_columnas = mayor_costo_x_columna(matriz)
 
-    matriz_IC = calcular_IC(matriz, mayores_filas, mayores_columnas)
-    matriz_IC2 = copy.deepcopy(matriz_IC)
+    matriz_IC, indices_IC = calcular_IC(matriz, mayores_filas, mayores_columnas)
+    matriz_IC = list(chain.from_iterable(matriz_IC))
+    matriz_IC.sort(key = lambda x: x[1], reverse=False)
+    matriz_IC.sort(key = lambda x: x[0], reverse=True)
     i, matriz_IC = encontrar_russell(matriz, matriz_IC)
     
     while i != 0:
@@ -430,7 +446,8 @@ def russell(matriz):
 
         matriz = asignar_oferta_demanda(matriz, i, j)
         i, matriz_IC = encontrar_russell(matriz, matriz_IC)
-    return [matriz, matriz_IC2]
+    
+    return [matriz, indices_IC]
 
 def verificar_optimalidad(matriz):
 
@@ -699,7 +716,9 @@ def obtener_solucion(metodo_sol_inicial, ruta_archivo):
         matriz, matriz_IC = russell(matriz)
         escribir_archivo(ruta_archivo, "\nMetodo Inicial: Russell")
         escribir_archivo(ruta_archivo, "Matriz de Indice de Costos")
+        matriz_IC = obtener_matriz_indices_IC(matriz_IC)
         escribir_archivo(ruta_archivo, matriz_a_texto(matriz_IC))
+        #
     else:
         print("El metodo ingresado no es valido")
         quit()

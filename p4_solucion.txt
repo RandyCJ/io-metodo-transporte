@@ -6,8 +6,9 @@ Demanda		1500		2000		1000
 
 Metodo Inicial: Russell
 Matriz de Indice de Costos
-12		10		10
-10		12		11
+  		D1		D2		D3
+O1		12		10		10
+O2		10		12		11
 Matriz de asignacion
   		D1  		D2  		D3 
 O1		1500		-   		500
