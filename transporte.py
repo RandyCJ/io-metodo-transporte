@@ -5,7 +5,6 @@ from sympy.solvers.solveset import linsolve
 from itertools import chain
 import copy
 import numpy as np
-from numpy import unravel_index
 
 asignaciones_resueltas = []
 
@@ -230,7 +229,6 @@ def asignar_oferta_demanda(matriz, i, j):
     """
     oferta = matriz[i][-1]
     demanda = matriz[-1][j]
-
     #se asigna
     if oferta < demanda:
         matriz[i][1][j] = oferta
@@ -571,30 +569,25 @@ def mejorar_solucion(matriz):
     return [matriz, variables_resueltas]
 
 def obtener_variable_saliente(variable_entrante, ciclo_asignacion):
+    i = 3
+    variable_saliente = ciclo_asignacion[1]
+    while i < len(ciclo_asignacion):
+        if ciclo_asignacion[i][0] < variable_saliente[0]:
+            variable_saliente = ciclo_asignacion[i]
+        i += 2
     
-    ciclo_asignacion = list(chain.from_iterable(ciclo_asignacion))
-    ciclo_asignacion = [x for x in ciclo_asignacion if x != 0]
-    ciclo_asignacion.sort()
-
-    variable_saliente = ()
-    for (valor, i, j) in ciclo_asignacion[1:]:
-        if variable_entrante[1] == i or variable_entrante[2] == j: # se elije la que tenga menor valor que sea adyacente a la entrante
-            variable_saliente = (valor, i, j)
-            ciclo_asignacion.remove(variable_saliente)
-            break
-    
-    return [variable_saliente, ciclo_asignacion[1:]]
-    
+    return variable_saliente
 
 def encontrar_ciclo_asignacion(matriz, variable_entrante):
-    
+
     largo_filas = len(matriz)-1
     largo_columnas = len(matriz[0][0])
 
     matriz_asignaciones = [[0 for x in range(0, largo_columnas)] for x in range(0, largo_filas)]
-    matriz_asignaciones[variable_entrante[1]][variable_entrante[2]] = (-1, variable_entrante[1], variable_entrante[2])
+    matriz_asignaciones[variable_entrante[1]][variable_entrante[2]] = (-1, variable_entrante[1], variable_entrante[2]) #guardo la entrante
     i = 0
     j = 0
+
     #hago una copia de las asignaciones, pero guardando las posiciones
     #para asi cuando empiece a eliminar filas y columnas, no perder los indices
     while i < largo_filas:
@@ -650,42 +643,58 @@ def encontrar_ciclo_asignacion(matriz, variable_entrante):
             j += 1
             i = 0
             cuenta = 0
-    return matriz_asignaciones
+    lista_asignaciones = ordenar_ciclo(matriz_asignaciones)
+    return lista_asignaciones
+
+def ordenar_ciclo(asignaciones):
+    asignaciones = list(chain.from_iterable(asignaciones))
+    asignaciones = [x for x in asignaciones if x != 0] #elimino los ceros
+    asignaciones.sort()
+    
+    orden_asignacion = [asignaciones[0]]
+    asignaciones.pop(0)
+
+    i = 0
+    casilla = orden_asignacion[0][1] #se iguala a la fila donde esta la entrante
+    buscar_fila = True
+    while len(asignaciones) != 0:
+        while i < len(asignaciones):
+            if buscar_fila:
+                if asignaciones[i][1] == casilla:
+                    orden_asignacion.append(asignaciones[i])
+                    casilla = asignaciones[i][2]
+                    asignaciones.pop(i)
+                    i -= 1
+                    buscar_fila = False
+            else:
+                if asignaciones[i][2] == casilla:
+                    orden_asignacion.append(asignaciones[i])
+                    casilla = asignaciones[i][1]
+                    asignaciones.pop(i)
+                    i -= 1
+                    buscar_fila = True
+            i += 1
+        i = 0
+    return orden_asignacion
 
 def cambiar_asignacion(matriz, variable_entrante, variable_saliente, ciclo_asignacion):
 
     valor_asignacion = variable_saliente[0]
-    matriz[variable_entrante[1]][1][variable_entrante[2]] = valor_asignacion
+    matriz[ciclo_asignacion[0][1]][1][ciclo_asignacion[0][2]] = 0 #se coloca un cero en la entrante
+    
+    contador = 0
+    while contador < len(ciclo_asignacion):
+        v, i, j = ciclo_asignacion[contador]
+        if contador % 2 == 0:
+            matriz[i][1][j] += valor_asignacion
+        else:
+            matriz[i][1][j] -= valor_asignacion
+        contador += 1
+        
+
+    #se coloca la saliente como "-"
     matriz[variable_saliente[1]][1][variable_saliente[2]] = "-"
-    valor_asignacion *= -1
     
-    if variable_entrante[1] == variable_saliente[1]:
-        casilla_actual = variable_entrante[2]
-        revisar_filas = False
-    else:
-        casilla_actual = variable_entrante[1]
-        revisar_filas = True
-    
-    #recorre las variables del ciclo en un orden 'circular'
-    while len(ciclo_asignacion) != 0:
-        for (valor, i, j) in ciclo_asignacion:
-            if revisar_filas:
-                if i == casilla_actual:
-                    matriz[i][1][j] += valor_asignacion
-                    valor_asignacion *= -1
-                    revisar_filas = False
-                    ciclo_asignacion.remove((valor, i, j))
-                    casilla_actual = j
-                    break
-            else:
-                if j == casilla_actual:
-                    matriz[i][1][j] += valor_asignacion
-                    valor_asignacion *= -1
-                    revisar_filas = True
-                    ciclo_asignacion.remove((valor, i, j))
-                    casilla_actual = i
-                    break
-    matriz[variable_entrante[1]][2][variable_entrante[2]] = "-" # se coloca el indice de la entrante como no asignado
     return matriz
 
 def es_degenerada(matriz):
@@ -697,6 +706,18 @@ def es_degenerada(matriz):
             if type(valor) == int:
                 cuenta += 1
     return cuenta != asignaciones_requeridas
+
+def limpiar_indices(matriz):
+    i = 0
+    j = 0
+    while i < len(matriz)-1:
+        while j < len(matriz[0][0]):
+            matriz[i][2][j] = "-"
+            j += 1
+        i += 1
+        j = 0
+    
+    return matriz
 
 def obtener_solucion(metodo_sol_inicial, ruta_archivo):
     global asignaciones_resueltas
@@ -731,11 +752,12 @@ def obtener_solucion(metodo_sol_inicial, ruta_archivo):
     matriz, variables_resueltas = mejorar_solucion(matriz)
     escribir_matriz_indices(matriz, variables_resueltas, ruta_archivo)
     variable_entrante = verificar_optimalidad(matriz)
+    matriz = limpiar_indices(matriz)
     iteracion = 1
     while variable_entrante != 0:
         variables_mejoradas = []
         ciclo_asignacion = encontrar_ciclo_asignacion(matriz, variable_entrante)
-        variable_saliente, ciclo_asignacion = obtener_variable_saliente(variable_entrante, ciclo_asignacion)
+        variable_saliente = obtener_variable_saliente(variable_entrante, ciclo_asignacion)
         escribir_entrante_saliente(variable_entrante, variable_saliente, ruta_archivo)
         matriz = cambiar_asignacion(matriz, variable_entrante, variable_saliente, ciclo_asignacion)
         m_asig_actual = obtener_tipo_matriz(matriz, 1)
@@ -752,6 +774,7 @@ def obtener_solucion(metodo_sol_inicial, ruta_archivo):
         matriz, variables_resueltas = mejorar_solucion(matriz)
         escribir_matriz_indices(matriz, variables_resueltas, ruta_archivo)
         variable_entrante = verificar_optimalidad(matriz)
+        matriz = limpiar_indices(matriz)
         iteracion += 1
 
     escribir_archivo(ruta_archivo, "Se encontro la optimalidad\nCosto minimo total: " + str(obtener_costo_total(matriz)))

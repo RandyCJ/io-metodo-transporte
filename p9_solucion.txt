@@ -1,0 +1,56 @@
+Matriz de costos
+       		D1		D2		D3   		D4   		Oferta
+O1     		5 		9 		10000		4    		28    
+O2     		6 		10		3    		10000		32    
+O3     		4 		2 		5    		7    		60    
+O4     		0 		0 		0    		0    		30    
+Demanda		48		29		40   		33   		      
+
+Metodo Inicial: Vogel
+Matriz de asignacion
+  		D1		D2		D3		D4
+O1		25		- 		- 		3 
+O2		- 		- 		32		- 
+O3		23		29		8 		- 
+O4		- 		- 		- 		30
+Costo total: 423
+Matriz de indices
+       		V1 = 4		V2 = 2		V3 = 5		V4 = 3
+U1 = 1 		-     		-6    		-9994 		-     
+U2 = -2		-4    		-10   		-     		-9999 
+U3 = 0 		-     		-     		-     		-4    
+U4 = -3		1     		-1    		2     		      
+Variable entrante: U4V3
+Variable saliente: U3V3
+Iteracion 1
+Matriz de asignacion
+  		D1		D2		D3		D4
+O1		17		- 		- 		11
+O2		- 		- 		32		- 
+O3		31		29		- 		- 
+O4		- 		- 		8 		22
+Costo total: 407
+Matriz de indices
+      		V1 = 1		V2 = -1		V3 = 0		V4 = 0
+U1 = 4		-     		-6     		-9996 		-     
+U2 = 3		-2    		-8     		-     		-9997 
+U3 = 3		-     		-      		-2    		-4    
+U4 = 0		1     		-1     		-     		-     
+Variable entrante: U4V1
+Variable saliente: U1V1
+Iteracion 2
+Matriz de asignacion
+  		D1		D2		D3		D4
+O1		- 		- 		- 		28
+O2		- 		- 		32		- 
+O3		31		29		- 		- 
+O4		17		- 		8 		5 
+Costo total: 390
+Matriz de indices
+      		V1 = 0		V2 = -2		V3 = 0		V4 = 0
+U1 = 4		-1    		-7     		-9996 		-     
+U2 = 3		-3    		-9     		-     		-9997 
+U3 = 4		-     		-      		-1    		-3    
+U4 = 0		-     		-2     		-     		-     
+Se encontro la optimalidad
+Costo minimo total: 390
