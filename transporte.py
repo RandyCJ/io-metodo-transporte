@@ -85,12 +85,20 @@ def limpiar_archivo_solucion(nombre_archivo):
         print("\nNo se pudo crear o abrir el archivo\n")
 
 def escribir_matriz_costos(matriz, nombre_archivo):
+    """ Escribe en el archivo la matriz de costos
+            E: la matriz, el nombre del archivo
+            S: N/A
+    """
     matriz_costos = obtener_tipo_matriz(matriz, 0)
     matriz_texto = matriz_a_texto(matriz_costos)
     escribir_archivo(nombre_archivo, "Matriz de costos")
     escribir_archivo(nombre_archivo, matriz_texto)
 
 def escribir_entrante_saliente(v_entrante, v_saliente, nombre_archivo):
+    """ Escribe en el archivo la variable entrante y saliente
+            E: recibe una tupla con las posiciones de la entrante y saliente, y el nombre del archivo
+            S: N/A
+    """
 
     entrante = "Variable entrante: U" + str(v_entrante[1] + 1) + "V" + str(v_entrante[2] + 1)
     saliente = "Variable saliente: U" + str(v_saliente[1] + 1) + "V" + str(v_saliente[2] + 1)
@@ -100,6 +108,10 @@ def escribir_entrante_saliente(v_entrante, v_saliente, nombre_archivo):
     escribir_archivo(nombre_archivo, entrante + "\n" + saliente)
 
 def escribir_matriz_indices(matriz, variables, nombre_archivo):
+    """ Escribe en el archivo la matriz de indices
+            E: recibe la matriz, las variables y el nombre del archivo
+            S: N/A
+    """
     matriz_indices = obtener_tipo_matriz(matriz, 2)
     
     i = 0
@@ -121,6 +133,10 @@ def escribir_matriz_indices(matriz, variables, nombre_archivo):
     escribir_archivo(nombre_archivo, matriz_texto)
 
 def escribir_matriz_solucion(matriz, nombre_archivo):
+    """ Escribe la matriz de asignacion y el costo
+            E: recibe la matriz y el nombre del archivo
+            S: N/A
+    """
     matriz_asignacion = obtener_tipo_matriz(matriz, 1)
     matriz_texto = matriz_a_texto(matriz_asignacion)
     escribir_archivo(nombre_archivo, "Matriz de asignacion")
@@ -128,12 +144,12 @@ def escribir_matriz_solucion(matriz, nombre_archivo):
     escribir_archivo(nombre_archivo, "Costo total: " + str(obtener_costo_total(matriz)))
 
 def obtener_tipo_matriz(matriz, tipo):
-    """Retorna una matriz de las 3 que almacena la variable matriz
+    """ Obtiene la matriz deseada, sea de costos o indicadores
+            E: recibe la matriz y el tipo de matriz que quiere recibir
+            S: retorna la matriz deseada
         con 0: matriz de costos
         con 1: matriz de asignaciones
         con 2: matriz de indices
-        E: la matriz, el tipo de matriz deseado
-        S: la matriz deseada
     """
     encabezado = []
     nueva_matriz = []
@@ -168,6 +184,10 @@ def obtener_tipo_matriz(matriz, tipo):
     return nueva_matriz
 
 def obtener_matriz_indices_IC(indices_IC):
+    """ Crea una matriz con encabezado y los indices IC
+            E: recibe la matriz con los indicadores IC
+            S: retorna la matriz creada con los encabezados y los indices IC
+    """
     #O y D para la tabla de indices
     encabezado = [" "]
     for n in range(0, len(indices_IC[0])):
@@ -190,6 +210,10 @@ def matriz_a_texto(matriz):
         return "\n".join(tabla)
 
 def obtener_costo_total(matriz):
+    """ Calcula el costo mínimo de la matriz de asignaciones recibida
+            E: la matriz
+            S: retorna el costo minimo
+    """
     i = 0
     total = 0
     for matrices in matriz[:-1]:
@@ -201,6 +225,10 @@ def obtener_costo_total(matriz):
     return total
 
 def equilibrar_matriz(matriz):
+    """ Equilibra la matriz añadiendo fila o columna con ceros para cuando la demanda y oferta no sean iguales
+            E: recibe la matriz a equilibrar
+            S: retorna la matriz ya equilibrada
+    """
     diferencia = matriz[1][0] - matriz[1][1]
 
     if diferencia == 0:
@@ -255,6 +283,10 @@ def asignar_oferta_demanda(matriz, i, j):
     return matriz
 
 def encontrar_noroeste(matriz):
+    """ Encuentra la posicion de la siguiente casilla a asignar por metodo noroeste
+            E: recibe la matriz
+            S: retorna la posicion donde se debe asignar, 0 si ya todo fue asignado
+    """
     i = 0
     j = 0
     for fila in matriz[:-1]:
@@ -367,18 +399,24 @@ def vogel(matriz):
     return matriz
 
 def mayor_costo_x_fila(matriz):
-
+    """ Calcula la casilla con más costo por fila
+            E: recibe la matriz 
+            S: retorna una lista con el numero mayor de cada fila
+    """
     mayores_fila = []
     for m in matriz[:-1]:
         tmp = copy.deepcopy(m[0])
         tmp.sort(reverse=True)
         for valor in tmp:
-            if valor <10000:
-                mayores_fila.append(valor)
-                break
+            mayores_fila.append(valor)
+            break
     return mayores_fila
 
 def mayor_costo_x_columna(matriz):
+    """ Calcula la casilla con más costo por columna
+            E: recibe la matriz 
+            S: retorna una lista con el numero mayor de cada columna
+    """
 
     i = 1
     j = 0
@@ -395,6 +433,10 @@ def mayor_costo_x_columna(matriz):
     return mayores_columna
 
 def calcular_IC(matriz, mayores_fila, mayores_columna):
+    """ Calcula el IC para el metodo Russell
+            E: recibe la matriz, y dos listas con los mayores por fila y columna
+            S: retorna una lista con la matriz de IC y una lista con los indices solos
+    """
     largo_filas = len(matriz)-1
     largo_columnas = len(matriz[0][0])
     i = 0
@@ -413,6 +455,10 @@ def calcular_IC(matriz, mayores_fila, mayores_columna):
     return [matriz_IC, indices_IC]
 
 def encontrar_russell(matriz, matriz_IC):
+    """ Encuentra la siguiente casilla a asignar mediante russell
+            E: recibe la matriz y la matriz de indicadores, que va actualizando
+            S: retorna la posicion de la casilla a asignar, y la matriz IC actualizada
+    """
     
     if len(matriz_IC) == 0:
             return [0, []]
@@ -428,6 +474,10 @@ def encontrar_russell(matriz, matriz_IC):
     return [[pos[0], pos[1]], matriz_IC]
 
 def russell(matriz):
+    """ realiza las iteraciones de russell hasta que todo esté asignado
+            E: recibe la matriz 
+            S: retorna la matriz el metodo russell terminado
+    """
 
     mayores_filas = mayor_costo_x_fila(matriz)
     mayores_columnas = mayor_costo_x_columna(matriz)
@@ -448,7 +498,10 @@ def russell(matriz):
     return [matriz, indices_IC]
 
 def verificar_optimalidad(matriz):
-
+    """ revisa si la matriz es óptima en la matriz de indicadores
+            E: recibe la matriz 
+            S: retorna 0 si ya es óptima, retorna la variable entrante de la siguiente iteración si no es óptima
+    """
     i = 0
     j = 0
     variables_mejorables = []
@@ -469,6 +522,10 @@ def verificar_optimalidad(matriz):
     return 0
 
 def mas_asignados_fila_columna(matriz):
+    """ Calcula la fila o columna que tenga más asignados, para calcular las U y V
+            E: recibe la matriz 
+            S: retorna la fila o columna con mayor asignados
+    """
     
     #primero sacamos la cantidad de asignados por fila
     i = 0
@@ -505,6 +562,10 @@ def mas_asignados_fila_columna(matriz):
     return asignados[0]
 
 def resolver_variables(matriz, mejor_linea):
+    """ Resuelve las variables U y V
+            E: recibe la matriz y la mejor fila o columna
+            S: retorna dos listas con las variables resueltas en orden de U y V
+    """
     # se crean las variables V de las filas
     variables_lineas = []
     for n in range(0, len(matriz)-1):
@@ -549,26 +610,37 @@ def resolver_variables(matriz, mejor_linea):
     return [variables_lineas, variables_columnas]
 
 def calcular_indices(matriz, variables_u, variables_v):
+    """ Calcula los indicadores para ver si es optima
+            E: recibe la matriz 
+            S: retorna una lista con el numero mayor de cada fila
+    """
 
     i = 0
     j = 0
     while i < len(matriz)-1:
         while j < len(matriz[0][0]):
             if type(matriz[i][1][j]) == str:
-                matriz[i][2][j] = int(variables_u[i]) + int(variables_v[j]) - matriz[i][0][j]
+                matriz[i][2][j] = Rational(variables_u[i]) + Rational(variables_v[j]) - matriz[i][0][j]
             j += 1
         i += 1
         j = 0
     return matriz
 
 def mejorar_solucion(matriz):
-    #matriz = [[[6,3,5,4], ["-",12,1,9], ["-", "-", "-", "-"], 22], [[5,9,2,7], [7,"-",8,"-"], ["-", "-", "-", "-"], 15], [[5,7,8,6], ["-","-","-",6], ["-", "-", "-", "-"], 8], [7,12,17,9]]
+    """ Resuelve las variables y calcula los indicadores
+            E: recibe la matriz 
+            S: retorna la matriz actualizada y las variables resueltas
+    """
     mejor_fila_columna = mas_asignados_fila_columna(matriz)
     variables_resueltas = resolver_variables(matriz, mejor_fila_columna)
     matriz = calcular_indices(matriz, variables_resueltas[0], variables_resueltas[1])
     return [matriz, variables_resueltas]
 
-def obtener_variable_saliente(variable_entrante, ciclo_asignacion):
+def obtener_variable_saliente(ciclo_asignacion):
+    """ Determina que casilla es la variable saliente
+            E: recibe el ciclo de asignacion, que es una lista de tuplas
+            S: retorna la variable saliente, que es una tupla con la asignacion y la posicion de la casilla
+    """
     i = 3
     variable_saliente = ciclo_asignacion[1]
     while i < len(ciclo_asignacion):
@@ -579,6 +651,11 @@ def obtener_variable_saliente(variable_entrante, ciclo_asignacion):
     return variable_saliente
 
 def encontrar_ciclo_asignacion(matriz, variable_entrante):
+    """ Encuentra el ciclo de asignacion, eliminando filas y columnas
+            E: recibe la matriz y la variable entrante
+            S: retorna el ciclo de asignacion, que es una lista de tuplas con las asignacion y las posiciones de
+                las casillas dentro del ciclo
+    """
 
     largo_filas = len(matriz)-1
     largo_columnas = len(matriz[0][0])
@@ -647,6 +724,10 @@ def encontrar_ciclo_asignacion(matriz, variable_entrante):
     return lista_asignaciones
 
 def ordenar_ciclo(asignaciones):
+    """ Ordena el ciclo de asignacion para que este en orden de sumar, restar, sumar, etc...
+            E: recibe el ciclo de asignaciones
+            S: retorna el ciclo ordenado
+    """
     asignaciones = list(chain.from_iterable(asignaciones))
     asignaciones = [x for x in asignaciones if x != 0] #elimino los ceros
     asignaciones.sort()
@@ -677,8 +758,11 @@ def ordenar_ciclo(asignaciones):
         i = 0
     return orden_asignacion
 
-def cambiar_asignacion(matriz, variable_entrante, variable_saliente, ciclo_asignacion):
-
+def cambiar_asignacion(matriz, variable_saliente, ciclo_asignacion):
+    """ cambia las asignaciones en el ciclo de asignacion
+            E: recibe la matriz, la variable saliente y el ciclo de asignacion
+            S: retorna la matriz ya actualizada
+    """
     valor_asignacion = variable_saliente[0]
     matriz[ciclo_asignacion[0][1]][1][ciclo_asignacion[0][2]] = 0 #se coloca un cero en la entrante
     
@@ -691,14 +775,17 @@ def cambiar_asignacion(matriz, variable_entrante, variable_saliente, ciclo_asign
             matriz[i][1][j] -= valor_asignacion
         contador += 1
         
-
     #se coloca la saliente como "-"
     matriz[variable_saliente[1]][1][variable_saliente[2]] = "-"
     
     return matriz
 
 def es_degenerada(matriz):
-
+    """ Determina si una solucion inicial es degenerada
+        osea que la cantidad de asignaciones sea menor a la suma de filas + columnas - 1
+            E: recibe la matriz 
+            S: True si es degenerada, False si no
+    """
     asignaciones_requeridas = len(matriz)-1 + len(matriz[0][0]) - 1
     cuenta = 0
     for m in matriz[:-1]:
@@ -708,6 +795,10 @@ def es_degenerada(matriz):
     return cuenta != asignaciones_requeridas
 
 def limpiar_indices(matriz):
+    """ Limpia la matriz de indicadores para la siguiente iteración
+            E: recibe la matriz 
+            S: retorna la matriz actualizada
+    """
     i = 0
     j = 0
     while i < len(matriz)-1:
@@ -720,6 +811,10 @@ def limpiar_indices(matriz):
     return matriz
 
 def obtener_solucion(metodo_sol_inicial, ruta_archivo):
+    """ Obtiene la solución de el archivo, realiza las iteraciones hasta solución optima
+            E: recibe un entero que indica el metodo inicial y la ruta del archivo
+            S: N/A
+    """
     global asignaciones_resueltas
     matriz = leer_archivo(ruta_archivo)
     matriz = equilibrar_matriz(matriz)
@@ -746,7 +841,7 @@ def obtener_solucion(metodo_sol_inicial, ruta_archivo):
     escribir_matriz_solucion(matriz, ruta_archivo) #matriz de asignacion inicial
     if es_degenerada(matriz):
         escribir_archivo(ruta_archivo, "No se puede continuar porque la solucion inicial es degenerada")
-        print("Solucion inicial degenerada; WIP implementacion de agregar cero y que no se forme un ciclo")
+        print("Solucion inicial degenerada, no se puede resolver")
         quit()
     matriz, variables_resueltas = mejorar_solucion(matriz)
     escribir_matriz_indices(matriz, variables_resueltas, ruta_archivo)
@@ -756,9 +851,9 @@ def obtener_solucion(metodo_sol_inicial, ruta_archivo):
     while variable_entrante != 0:
         variables_mejoradas = []
         ciclo_asignacion = encontrar_ciclo_asignacion(matriz, variable_entrante)
-        variable_saliente = obtener_variable_saliente(variable_entrante, ciclo_asignacion)
+        variable_saliente = obtener_variable_saliente(ciclo_asignacion)
         escribir_entrante_saliente(variable_entrante, variable_saliente, ruta_archivo)
-        matriz = cambiar_asignacion(matriz, variable_entrante, variable_saliente, ciclo_asignacion)
+        matriz = cambiar_asignacion(matriz, variable_saliente, ciclo_asignacion)
         m_asig_actual = obtener_tipo_matriz(matriz, 1)
         if m_asig_actual not in asignaciones_resueltas:
             asignaciones_resueltas.append(m_asig_actual)
@@ -780,7 +875,7 @@ def obtener_solucion(metodo_sol_inicial, ruta_archivo):
     print("Costo minimo total: " + str(obtener_costo_total(matriz)))
 
 def imprimir_ayuda():
-    """ Imprime en consola una ayuda para correr el programa
+    """ Imprime en consola una ayuda para correr el programa en caso de que se ejecute mal
             E: N/A
             S: N/A
     """
