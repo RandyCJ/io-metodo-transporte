@@ -4,7 +4,7 @@ from sympy import *
 from sympy.solvers.solveset import linsolve
 from itertools import chain
 import copy
-import numpy as np
+import sympy
 
 asignaciones_resueltas = []
 
@@ -23,7 +23,7 @@ def leer_archivo(nombre_archivo):
             for linea in archivo:
                 lista_datos = linea.split(",")
                 lista_datos[-1] = lista_datos[-1].replace("\n", "")
-                lista_datos = list(map(int, lista_datos))
+                lista_datos = list(map(Rational, lista_datos))
                 
                 if contador == 0:    
                     oferta = lista_datos
@@ -209,7 +209,7 @@ def equilibrar_matriz(matriz):
     if diferencia > 0: #si la demanda es mayor que la oferta
         ofertas = matriz[0].pop(-1)
         largo_costos = len(matriz[0][0][0])
-        matriz[0].append([[0 for x in range(0, largo_costos)], [0 for x in range(0, largo_costos)], ["" for x in range(0, largo_costos)], abs(diferencia)])
+        matriz[0].append([[Rational(0) for x in range(0, largo_costos)], [0 for x in range(0, largo_costos)], ["" for x in range(0, largo_costos)], abs(diferencia)])
         matriz[0].append(ofertas)
     else:
         for listas in matriz[0][:-1]:
@@ -217,7 +217,7 @@ def equilibrar_matriz(matriz):
                 if lista[0] == "-":
                     lista.append("-")
                 else:
-                    lista.append(0)
+                    lista.append(Rational(0))
         matriz[0][-1].append(abs(diferencia))
     return matriz[0]
 
@@ -232,12 +232,12 @@ def asignar_oferta_demanda(matriz, i, j):
     #se asigna
     if oferta < demanda:
         matriz[i][1][j] = oferta
-        matriz[i][-1] = 0
+        matriz[i][-1] = Rational(0)
         matriz[-1][j] -= oferta    
     else:
         matriz[i][1][j] = demanda
         matriz[i][-1] -= demanda
-        matriz[-1][j] = 0
+        matriz[-1][j] = Rational(0)
 
     j2 = j
     if matriz[i][-1] == 0: #si la oferta es 0, se ponen todos los ceros de esa fila como -
@@ -456,7 +456,7 @@ def verificar_optimalidad(matriz):
     while i < len(matriz)-1:
         while j < len(matriz[0][0]):
             valor = matriz[i][2][j]
-            if type(valor) == int:
+            if isinstance(valor, sympy.Basic):
                 if valor >= 0:
                     variables_mejorables.append((valor, i, j))
             j += 1
@@ -477,7 +477,7 @@ def mas_asignados_fila_columna(matriz):
     asignados = []
     while i < len(matriz)-1:
         while j < len(matriz[0][0]):
-            if type(matriz[i][1][j]) == int:
+            if isinstance(matriz[i][1][j], sympy.Basic):
                 if matriz[i][1][j] >= 0:
                     cuenta += 1
             j += 1
@@ -492,7 +492,7 @@ def mas_asignados_fila_columna(matriz):
     cuenta = 0
     while j < len(matriz[0][0]):
         while i < len(matriz) - 1:
-            if type(matriz[i][1][j]) == int:
+            if isinstance(matriz[i][1][j], sympy.Basic):
                 if matriz[i][1][j] >= 0:
                     cuenta += 1
             i += 1
@@ -525,7 +525,7 @@ def resolver_variables(matriz, mejor_linea):
     j = 0
     while i < len(matriz)-1:
         while j < len(matriz[0][0]):
-            if type(matriz[i][1][j]) == int:
+            if isinstance(matriz[i][1][j], sympy.Basic):
                 if matriz[i][1][j] >= 0:
                     ecuacion = variables_lineas[i] + variables_columnas[j] - matriz[i][0][j]
                     ecuaciones.append(ecuacion)
@@ -592,7 +592,7 @@ def encontrar_ciclo_asignacion(matriz, variable_entrante):
     #para asi cuando empiece a eliminar filas y columnas, no perder los indices
     while i < largo_filas:
         while j < largo_columnas:
-            if type(matriz[i][1][j]) == int:
+            if isinstance(matriz[i][1][j], sympy.Basic):
                 if matriz[i][1][j] >= 0:
                     matriz_asignaciones[i][j] = (matriz[i][1][j], i, j)
             j += 1
@@ -703,7 +703,7 @@ def es_degenerada(matriz):
     cuenta = 0
     for m in matriz[:-1]:
         for valor in m[1]:
-            if type(valor) == int:
+            if isinstance(valor, sympy.Basic):
                 cuenta += 1
     return cuenta != asignaciones_requeridas
 
@@ -739,7 +739,6 @@ def obtener_solucion(metodo_sol_inicial, ruta_archivo):
         escribir_archivo(ruta_archivo, "Matriz de Indice de Costos")
         matriz_IC = obtener_matriz_indices_IC(matriz_IC)
         escribir_archivo(ruta_archivo, matriz_a_texto(matriz_IC))
-        #
     else:
         print("El metodo ingresado no es valido")
         quit()
