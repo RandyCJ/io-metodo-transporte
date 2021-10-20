@@ -489,10 +489,7 @@ def russell(matriz):
     i, matriz_IC = encontrar_russell(matriz, matriz_IC)
     
     while i != 0:
-        j = i[1]
-        i = i[0]
-
-        matriz = asignar_oferta_demanda(matriz, i, j)
+        matriz = asignar_oferta_demanda(matriz, i[0], i[1])
         i, matriz_IC = encontrar_russell(matriz, matriz_IC)
     
     return [matriz, indices_IC]
